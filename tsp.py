@@ -51,6 +51,54 @@ def tour_to_matrix(tour: tsplib95.fields.ToursField) -> np.ndarray:
 
     return matrix + matrix.T
 
+def tour_to_list(tour: np.ndarray) -> list[int]:
+    """Converts matrix representation of tour to a list of cities
+
+    Args:
+        tour (np.ndarray): tour as a matrix
+
+    Returns:
+        list[int]: list of cities
+    """
+    cur = 0
+    prev = get_next_city(tour, None, cur)
+    tour_list = []
+
+    i = 0
+    while i < len(tour):
+        tour_list.append(cur)
+        cur = get_next_city(tour, prev, cur)
+        prev = tour_list[-1]
+
+        i += 1
+
+    return tour_list
+
+def tour_valid(tour: np.ndarray) -> bool:
+    """Returns True if tour is valid.
+    Valid tour has two 1s in each row/column,
+    is symmetric and has every diagonal element 0.
+
+    Args:
+        tour (np.ndarray)
+
+    Returns:
+        bool
+    """
+    # Check tour is symmetric
+    if not np.array_equal(tour, tour.T):
+        return False
+    # Check diagonals are 0
+    elif np.trace(tour) != 0:
+        return False
+    # Check each row and column has two 1s
+    for i in range(len(tour)):
+        if np.sum(tour[i]) != 2:
+            return False
+        if np.sum(tour[:][i]) != 2:
+            return False
+    return True
+
 def generate_M_neighbours(
         problem: tsplib95.models.StandardProblem, prev: int, next: int, M = 20) -> list:
     """Generates a list of the M nearest neighbours to city i
@@ -69,7 +117,7 @@ def generate_M_neighbours(
 
     for i in range(N):
         # Skip over prev
-        if i != prev:
+        if i != prev and i != next:
             neighbours.append((i, get_weight(problem, next, i)))
 
      # Use a heap to efficiently get the M smallest elements
@@ -254,3 +302,42 @@ if __name__ == '__main__':
         print("TEST PASSED: get_next_city successfully reproduced the opt_tour")
     else:
         print("TEST FAILED: get_next_city was unsuccessful in reproducing the opt_tour")
+
+    # Test tour_valid
+    if tour_valid(test_tour):
+        print("TEST PASSED: tour_valid successfully identified valid tour")
+    else:
+        print("TEST FAILED: tour_valid")
+    
+    invalid_tour = np.asarray(
+        [[0, 0, 0, 1, 0, 1, 0, 0],
+         [1, 0, 0, 0, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0, 1, 0],
+         [0, 0, 0, 0, 1, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0, 0, 1],
+         [0, 0, 1, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 1, 0, 0],
+         [0, 0, 0, 0, 0, 0, 1, 0]])
+    invalid_tour += invalid_tour.T
+
+    if not tour_valid(invalid_tour):
+        print("TEST PASSED: tour_valid successfully identified invalid tour")
+    else:
+        print("TEST FAILED: tour_valid")
+
+    invalid_tour = np.asarray(
+        [[1, 0, 0, 0, 0, 0, 0, 0],
+         [1, 0, 0, 0, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 1],
+         [0, 0, 1, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 1, 0, 0],
+         [0, 0, 0, 0, 0, 0, 1, 0]])
+    invalid_tour += invalid_tour.T
+
+    if not tour_valid(invalid_tour):
+        print("TEST PASSED: tour_valid successfully identified invalid tour")
+    else:
+        print("TEST FAILED: tour_valid")
+

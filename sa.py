@@ -1,7 +1,8 @@
 import numpy as np
 import tsplib95
 
-from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move, generate_M_neighbours, get_next_city
+from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move
+from tsp import generate_M_neighbours, get_next_city, tour_to_list, tour_valid
 
 def metropolis(T: float, dE: float) -> bool:
     """Applies the metropolis condition
@@ -13,6 +14,7 @@ def metropolis(T: float, dE: float) -> bool:
     Returns:
         bool
     """
+    
     if dE < 0:
         return True
     else:
@@ -33,18 +35,28 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
     Returns:
         np.ndarray: tour obtained by annealing process
     """
+    print('-'*50, 'Simulating Annealing', '-'*50)
+    print(f"Problem: {problem.name}, N={problem.dimension}")
+
     # Generate initial tour
     N = problem.dimension
     tour = generate_random_tour(N)
 
     for T in T_schedule:
-        # Count which city in the tour we are on, starting from city 0
-        i = 0
-        cur = 0
-        prev = get_next_city(tour, None, cur)
-        while i < N:
-            # Get the next city in the tour
-            next = get_next_city(tour, prev, cur)
+        print(f'T: {T}')
+
+        # Loop through each city in current tour
+        tour_list = tour_to_list(tour)
+
+        # Copy the original tour for this annealing step
+        current_tour = tour.copy()
+
+        for i, cur in enumerate(tour_list):
+            print(i, '/', N)
+            prev = tour_list[i - 1]
+            next = tour_list[i + 1]
+            
+            assert(tour_valid(current_tour)), "Current tour is invalid"
 
             # Calculate energy of this tour
             E = classical_energy_tsp(problem, tour)
@@ -55,22 +67,23 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
             # Loop through each of the next city's neighbours
             for neighbour in neighbours:
                 # Find the city before neighbour
-                before_neighbour = get_next_city(tour, None, neighbour)
+                before_neighbour = tour_list[tour_list.index(neighbour) - 1]
 
                 # Make a two-opt move
-                new_tour = two_opt_move(tour, cur, before_neighbour, next, neighbour)
-    
+                new_tour = two_opt_move(tour.copy(), cur, before_neighbour, next, neighbour)
+
                 # Calculate energy of new system
                 new_E = classical_energy_tsp(problem, new_tour)
 
                 # apply metropolis condition
                 dE = E - new_E
                 if metropolis(T, dE):
-                    tour = new_tour
+                    current_tour = new_tour
                     E = new_E
             prev = cur
             cur = next
-            i += 1
+
+        tour = current_tour
                     
     return tour
 
