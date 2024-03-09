@@ -95,8 +95,9 @@ def tour_valid(tour: np.ndarray) -> bool:
     for i in range(len(tour)):
         if np.sum(tour[i]) != 2:
             return False
-        if np.sum(tour[:][i]) != 2:
+        elif np.sum(tour[:][i]) != 2:
             return False
+        
     return True
 
 def generate_M_neighbours(
@@ -127,7 +128,7 @@ def generate_M_neighbours(
     return [i for i, _ in nearest_neighbours]
 
 def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
-    """Conducts a two opt move swapping connections (i->k) and (j->l) to (i->l) and (j->k)
+    """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->k) and (j<->l)
 
     Args:
         tour (np.ndarray)
@@ -139,14 +140,17 @@ def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     Returns:
         np.ndarray: tour with two-opt move applied
     """
-    tour[i][k] = 0
-    tour[k][i] = 0
-    tour[i][l] = 1
-    tour[l][i] = 1
-    tour[j][l] = 0
-    tour[l][j] = 0
-    tour[j][k] = 1
-    tour[k][j] = 1
+    # Delete old links
+    tour[i][j] = 0
+    tour[j][i] = 0
+    tour[k][l] = 0
+    tour[l][k] = 0
+
+    # Construct new links
+    tour[i][k] = 1
+    tour[k][i] = 1
+    tour[j][l] = 1
+    tour[l][j] = 1
     
     return tour
 
@@ -263,26 +267,24 @@ if __name__ == '__main__':
          [0, 0, 0, 0, 0, 0, 1, 0]])
     two_opt_tour += two_opt_tour.T
 
-    if np.array_equal(two_opt_move(test_tour, 1, 3, 4, 2), two_opt_tour):
+    if np.array_equal(two_opt_move(test_tour, 1, 4, 2, 3), two_opt_tour):
         print("TEST PASSED: two_opt_move was successful")
     else:
-        print("TEST FAILED: two_opt_move was unsuccessful")
-
-    
+        print(" ----- TEST FAILED: two_opt_move was unsuccessful")
         
     # Test get_next_city with a previous city
     next_city = get_next_city(two_opt_tour, 0, 3)
     if next_city == 4:
         print("TEST PASSED: get_next_city was successful")
     else:
-        print("TEST FAILED: get_next_city was unsuccessful")
+        print(" ----- TEST FAILED: get_next_city was unsuccessful")
 
     # Test get_next_city without a previous city
     next_city = get_next_city(two_opt_tour, None, 3)
     if next_city == 0:
         print("TEST PASSED: get_next_city was successful")
     else:
-        print("TEST FAILED: get_next_city was unsuccessful")
+        print(" ----- TEST FAILED: get_next_city was unsuccessful")
 
     # Check get_next_city can reproduce the correct tour for opt_tour
     cur = 0
@@ -300,13 +302,13 @@ if __name__ == '__main__':
     if opt.tours[0] == tour:
         print("TEST PASSED: get_next_city successfully reproduced the opt_tour")
     else:
-        print("TEST FAILED: get_next_city was unsuccessful in reproducing the opt_tour")
+        print(" ----- TEST FAILED: get_next_city was unsuccessful in reproducing the opt_tour")
 
     # Test tour_valid
     if tour_valid(test_tour):
         print("TEST PASSED: tour_valid successfully identified valid tour")
     else:
-        print("TEST FAILED: tour_valid")
+        print(" ----- TEST FAILED: tour_valid failed to identify a valid tour")
     
     invalid_tour = np.asarray(
         [[0, 0, 0, 1, 0, 1, 0, 0],
@@ -322,7 +324,7 @@ if __name__ == '__main__':
     if not tour_valid(invalid_tour):
         print("TEST PASSED: tour_valid successfully identified invalid tour")
     else:
-        print("TEST FAILED: tour_valid")
+        print(" ----- TEST FAILED: tour_valid")
 
     invalid_tour = np.asarray(
         [[1, 0, 0, 0, 0, 0, 0, 0],
@@ -338,5 +340,5 @@ if __name__ == '__main__':
     if not tour_valid(invalid_tour):
         print("TEST PASSED: tour_valid successfully identified invalid tour")
     else:
-        print("TEST FAILED: tour_valid")
+        print(" ----- TEST FAILED: tour_valid")
 
