@@ -268,8 +268,7 @@ if __name__ == '__main__':
     else:
         print("TEST FAILED: two_opt_move was unsuccessful")
 
-    # Ideally I would like to test the nearest neighbours code but it will take a while - reasonably
-    # sure it is ok
+    
         
     # Test get_next_city with a previous city
     next_city = get_next_city(two_opt_tour, 0, 3)

@@ -14,7 +14,7 @@ def metropolis(T: float, dE: float) -> bool:
     Returns:
         bool
     """
-    
+
     if dE < 0:
         return True
     else:
@@ -47,6 +47,8 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
 
         # Loop through each city in current tour
         tour_list = tour_to_list(tour)
+        print(f'Tour at T={T}', tour_list)
+        print(f'Sorted tour at T={T}', sorted(tour_list))
 
         # Copy the original tour for this annealing step
         current_tour = tour.copy()
@@ -54,7 +56,11 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
         for i, cur in enumerate(tour_list):
             print(i, '/', N)
             prev = tour_list[i - 1]
-            next = tour_list[i + 1]
+            next = tour_list[(i + 1)%N]
+
+            print('Prev: ', prev)
+            print('Cur: ', cur)
+            print('Next:' , next)
             
             assert(tour_valid(current_tour)), "Current tour is invalid"
 
@@ -63,14 +69,23 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
 
             # Generate the neighbourhood of the next city in the tour
             neighbours = generate_M_neighbours(problem, prev, next)
+            print(f'Neighbours of {next} ', neighbours)
 
             # Loop through each of the next city's neighbours
             for neighbour in neighbours:
                 # Find the city before neighbour
                 before_neighbour = tour_list[tour_list.index(neighbour) - 1]
+                print('neighbour:', neighbour)
+                print('before neighbour:', before_neighbour)
 
                 # Make a two-opt move
                 new_tour = two_opt_move(tour.copy(), cur, before_neighbour, next, neighbour)
+                print(tour_to_list(new_tour))
+                return
+
+                if not tour_valid(new_tour):
+                    # print('Tour invalid')
+                    continue
 
                 # Calculate energy of new system
                 new_E = classical_energy_tsp(problem, new_tour)
@@ -80,6 +95,7 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
                 if metropolis(T, dE):
                     current_tour = new_tour
                     E = new_E
+
             prev = cur
             cur = next
 
@@ -90,9 +106,9 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
 
 if __name__ == "__main__":
     # Load problem and optimal tour
-    problem_filepath = 'tsplib/pr1002.tsp'
+    problem_filepath = 'tsplib/berlin52.tsp'
     problem = load_tsp_instance(problem_filepath)
-    opt_filepath = 'tsplib/pr1002.opt.tour'
+    opt_filepath = 'tsplib/berlin52.opt.tour'
     opt = load_tsp_instance(opt_filepath)
 
     # Run simulated annealing on pr1002
