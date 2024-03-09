@@ -102,6 +102,36 @@ def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     
     return tour
 
+def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
+    """Returns the next city in the tour
+
+    Args:
+        tour (np.ndarray): current tour
+        prev (int / None): previous city or None if happy with any
+        cur (int): current city (between 0 and N-1)
+
+    Returns:
+        int: next city in tour
+    """
+    # Find column of cur city
+    col = tour[cur]
+
+    # Find which cities are connected to cur
+    args = np.argwhere(col)
+
+    if prev != None:
+        # Check prev is in args
+        assert prev in args, "ERROR getting next city, prev incorrect"
+
+        # Return the city that isn't prev
+        for arg in args:
+            if arg[0] != prev:
+                return arg[0]
+    else:
+        # Just return the first city
+        return args[0][0]
+
+
 def classical_energy_tsp(problem: tsplib95.models.StandardProblem, tour: np.ndarray):
     """Returns the total weight of a given tour
 
@@ -192,4 +222,35 @@ if __name__ == '__main__':
 
     # Ideally I would like to test the nearest neighbours code but it will take a while - reasonably
     # sure it is ok
+        
+    # Test get_next_city with a previous city
+    next_city = get_next_city(two_opt_tour, 0, 3)
+    if next_city == 4:
+        print("TEST PASSED: get_next_city was successful")
+    else:
+        print("TEST FAILED: get_next_city was unsuccessful")
+
+    # Test get_next_city without a previous city
+    next_city = get_next_city(two_opt_tour, None, 3)
+    if next_city == 0:
+        print("TEST PASSED: get_next_city was successful")
+    else:
+        print("TEST FAILED: get_next_city was unsuccessful")
+
+    # Check get_next_city can reproduce the correct tour for opt_tour
+    cur = 0
+    prev = 75
+    tour = []
+    i = 0
+    while i < N:
+        tour.append(cur + 1)
+        next = get_next_city(opt_tour, prev, cur)
+        prev = cur
+        cur = next
+
+        i += 1
     
+    if opt.tours[0] == tour:
+        print("TEST PASSED: get_next_city successfully reproduced the opt_tour")
+    else:
+        print("TEST FAILED: get_next_city was unsuccessful in reproducing the opt_tour")

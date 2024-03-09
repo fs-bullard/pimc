@@ -1,7 +1,7 @@
 import numpy as np
 import tsplib95
 
-from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move, generate_M_neighbours
+from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move, generate_M_neighbours, get_next_city
 
 def metropolis(T: float, dE: float) -> bool:
     """Applies the metropolis condition
@@ -38,11 +38,14 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
     tour = generate_random_tour(N)
 
     for T in T_schedule:
-        # TODO: need tour as a list of cities to do this
-        # I need to fix how I am looping through the cities - this makes no sense
-        for i, cur in enumerate(tour):
-            prev = tour[i - 1] # TODO
-            next = tour[(i+1)%N] # TODO
+        # Count which city in the tour we are on, starting from city 0
+        i = 0
+        cur = 0
+        prev = get_next_city(tour, None, cur)
+        while i < N:
+            # Get the next city in the tour
+            next = get_next_city(tour, prev, cur)
+
             # Calculate energy of this tour
             E = classical_energy_tsp(problem, tour)
 
@@ -52,9 +55,10 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
             # Loop through each of the next city's neighbours
             for neighbour in neighbours:
                 # Find the city before neighbour
-                before_neighbour = tour[np.where() - 1] # TODO
+                before_neighbour = get_next_city(tour, None, neighbour)
+
                 # Make a two-opt move
-                new_tour = two_opt_move(tour, cur, next, , neighbour)
+                new_tour = two_opt_move(tour, cur, before_neighbour, next, neighbour)
     
                 # Calculate energy of new system
                 new_E = classical_energy_tsp(problem, new_tour)
@@ -64,6 +68,9 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
                 if metropolis(T, dE):
                     tour = new_tour
                     E = new_E
+            prev = cur
+            cur = next
+            i += 1
                     
     return tour
 
