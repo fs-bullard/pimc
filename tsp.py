@@ -2,6 +2,7 @@ import tsplib95
 import numpy as np
 import random
 import heapq
+from copy import deepcopy
 
 def load_tsp_instance(filepath: str):
     return tsplib95.load(filepath)
@@ -101,7 +102,7 @@ def tour_valid(tour: np.ndarray) -> bool:
     return True
 
 def generate_M_neighbours(
-        problem: tsplib95.models.StandardProblem, prev: int, next: int, M = 20) -> list:
+        problem: tsplib95.models.StandardProblem, prev: int, next: int, M = 50) -> list:
     """Generates a list of the M nearest neighbours to city i
 
     Args:
@@ -126,6 +127,23 @@ def generate_M_neighbours(
 
     # Extract the indices from the tuples
     return [i for i, _ in nearest_neighbours]
+
+def generate_M_random_neighbours(N:int, prev: int, next: int, M = 20) -> list:
+    """Generates a list of M random cities excluding prev and next
+
+    Args:
+        N (int): number of cities in problem
+        prev (int): city before the current city
+        next (int): city we are looking to replace (after current city)
+        M (int): number of neighbours to generate
+
+    Returns:
+        list: list of M nearest neighbours to city next (excluding prev)
+    """
+    candidates = [i for i in range(N) if i != prev and i != next]
+
+    return random.sample(candidates, M)
+    
 
 def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->k) and (j<->l)
@@ -153,6 +171,9 @@ def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     tour[l][j] = 1
     
     return tour
+
+def combinatorial_move(tour) -> np.ndarray:
+    return
 
 def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
     """Returns the next city in the tour
@@ -182,7 +203,6 @@ def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
     else:
         # Just return the first city
         return args[0][0]
-
 
 def classical_energy_tsp(problem: tsplib95.models.StandardProblem, tour: np.ndarray):
     """Returns the total weight of a given tour
@@ -341,4 +361,5 @@ if __name__ == '__main__':
         print("TEST PASSED: tour_valid successfully identified invalid tour")
     else:
         print(" ----- TEST FAILED: tour_valid")
+
 

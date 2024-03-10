@@ -3,7 +3,7 @@ import tsplib95
 from copy import deepcopy
 
 from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move
-from tsp import generate_M_neighbours, get_next_city, tour_to_list, tour_valid, tour_to_matrix
+from tsp import generate_M_neighbours, get_next_city, tour_to_list, tour_valid, tour_to_matrix, generate_M_random_neighbours
 
 def metropolis(T: float, dE: float) -> bool:
     """Applies the metropolis condition
@@ -48,21 +48,14 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
 
         # Loop through each city in current tour
         tour_list = tour_to_list(tour)
-        # print(f'Tour at T={T}', tour_list)
-        # print(f'Sorted tour at T={T}', sorted(tour_list))
 
         # Copy the original tour for this annealing step
         current_tour = deepcopy(tour)
-        # print(tour_list)
 
         for i, cur in enumerate(tour_list):
             # print(i, '/', N)
             prev = tour_list[i - 1]
             next = tour_list[(i + 1)%N]
-
-            # print('Prev: ', prev)
-            # print('Cur: ', cur)
-            # print('Next:' , next)
             
             assert(tour_valid(current_tour)), "Current tour is invalid"
 
@@ -70,19 +63,16 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
             E = classical_energy_tsp(problem, tour)
 
             # Generate the neighbourhood of the next city in the tour
-            neighbours = generate_M_neighbours(problem, prev, next)
-            # print(f'Neighbours of {next} ', neighbours)
+            # neighbours = generate_M_neighbours(problem, prev, next)
+            neighbours = generate_M_random_neighbours(N, prev, next)
 
             # Loop through each of the next city's neighbours
             for neighbour in neighbours:
                 # Find the city before neighbour
                 before_neighbour = tour_list[tour_list.index(neighbour) - 1]
-                # print('neighbour:', neighbour)
-                # print('before neighbour:', before_neighbour)
 
                 # Make a two-opt move
                 new_tour = two_opt_move(deepcopy(tour), cur, next, before_neighbour, neighbour)
-                # print(tour_to_list(new_tour))
 
                 # Calculate energy of new system
                 new_E = classical_energy_tsp(problem, new_tour)
@@ -113,7 +103,7 @@ if __name__ == "__main__":
     # print("Optimum energy:", opt_energy)
 
     # Run simulated annealing on problem
-    T_0 = 200
+    T_0 = 100
     T_f = 1e-5
     annealing_steps = 1000
     T_schedule = np.linspace(T_0, T_f, annealing_steps)
