@@ -19,6 +19,24 @@ def get_weight(problem: tsplib95.models.StandardProblem, i: int, j: int) -> int:
     '''
     return problem.get_weight(i + 1, j + 1)
 
+def build_weight_dict(problem: tsplib95.models.StandardProblem) -> dict:
+    """Returns a dictionary of the weight of each edge precomputed
+
+    Args:
+        problem (tsplib95.models.StandardProblem): TSP of interest
+
+    Returns:
+        dict: Dictionary of weights
+    """
+    N = problem.dimension
+
+    weights = {}
+    for i in range(N):
+        for j in range(N):
+            weights[(i, j)] = get_weight(problem, i, j)
+
+    return weights
+
 def generate_random_tour(N: int) -> np.ndarray:
     """Generates a random valid symmetric tour matrix 
 
@@ -101,26 +119,22 @@ def tour_valid(tour: np.ndarray) -> bool:
         
     return True
 
-def generate_M_neighbours(
-        problem: tsplib95.models.StandardProblem, prev: int, next: int, M = 50) -> list:
-    """Generates a list of the M nearest neighbours to city i
+def generate_M_neighbours(N:int, weights: dict, cur: int, M: int = 20) -> list:
+    """Generates a list of the M nearest neighbours to city cur
 
     Args:
-        problem (tsplib95.models.StandardProblem)
-        prev (int): city before the current city
-        next (int): city we are looking to replace (after current city)
+        N (int): Number of cities in the problem
+        weights (dict): weights[(i, j)] gives the weight of edge (i, j)
+        cur (int): current city
         M (int): number of neighbours to generate
 
     Returns:
-        list: list of M nearest neighbours to city next (excluding prev)
+        list: list of M nearest neighbours to city cur
     """
-    N = problem.dimension
     neighbours = []
 
     for i in range(N):
-        # Skip over prev
-        if i != prev and i != next:
-            neighbours.append((i, get_weight(problem, next, i)))
+        neighbours.append((i, weights[(cur, i)]))
 
      # Use a heap to efficiently get the M smallest elements
     nearest_neighbours = heapq.nsmallest(M, neighbours, key=lambda x: x[1])
@@ -128,7 +142,24 @@ def generate_M_neighbours(
     # Extract the indices from the tuples
     return [i for i, _ in nearest_neighbours]
 
-def generate_M_random_neighbours(N:int, prev: int, next: int, M = 20) -> list:
+def build_neighbours_dict(N: int, weights: dict, M: int = 20) -> dict:
+    """Returns a dictionary of the M nearest neighbours to each city
+
+    Args:
+        N (int): number of cities in the problem
+        weights (dict): weights[(i, j)] gives the weight of edge (i, j)
+
+    Returns:
+        dict
+    """
+    neighbours_dict = {}
+
+    for i in range(N):
+        neighbours_dict[i] =  generate_M_neighbours(N, weights, i, M)
+
+    return neighbours_dict
+
+def generate_M_random_neighbours(N:int, prev: int, next: int, M = 25) -> list:
     """Generates a list of M random cities excluding prev and next
 
     Args:
@@ -146,7 +177,7 @@ def generate_M_random_neighbours(N:int, prev: int, next: int, M = 20) -> list:
     
 
 def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
-    """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->k) and (j<->l)
+    """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->l) and (j<->k)
 
     Args:
         tour (np.ndarray)
@@ -165,15 +196,12 @@ def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     tour[l][k] = 0
 
     # Construct new links
-    tour[i][k] = 1
-    tour[k][i] = 1
-    tour[j][l] = 1
-    tour[l][j] = 1
+    tour[i][l] = 1
+    tour[l][i] = 1
+    tour[j][k] = 1
+    tour[k][j] = 1
     
     return tour
-
-def combinatorial_move(tour) -> np.ndarray:
-    return
 
 def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
     """Returns the next city in the tour
@@ -204,11 +232,11 @@ def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
         # Just return the first city
         return args[0][0]
 
-def classical_energy_tsp(problem: tsplib95.models.StandardProblem, tour: np.ndarray):
+def classical_energy_tsp(weights: dict, tour: np.ndarray):
     """Returns the total weight of a given tour
 
     Args:
-        problem (tsplib95.models.StandardProblem): TSP of interest
+        weights (dict): weights[(i, j)] gives the weight of edge (i, j)
         tour (np.ndarray): tour represented by a matrix
 
     Returns:
@@ -219,9 +247,9 @@ def classical_energy_tsp(problem: tsplib95.models.StandardProblem, tour: np.ndar
     for i in range(N):
         for j in range(N):
             if tour[i][j]:
-                H += get_weight(problem, i, j)
+                H += weights[(i, j)]
 
-    return H // 2
+    return H / 2
 
 def quantum_energy_tsp():
     return
@@ -234,19 +262,29 @@ if __name__ == '__main__':
     opt = load_tsp_instance(opt_filepath)
     N = problem.dimension
 
+    # Test building the weights dicitonary
+    weights = build_weight_dict(problem)
+
+    i = random.randint(0, N - 1)
+    j = random.randint(0, N - 1)
+    if weights[(i, j)] == get_weight(problem, i, j):
+        print("TEST PASSED: build_weights_dict worked successfully")
+    else: 
+        print("TEST FAILED: build_weights_dict was unsuccessful")
+
     # Check classical energy gives correct weight
     opt_weight = get_tour_dist(problem, opt.tours[0])
     opt_tour = tour_to_matrix(opt.tours[0])
 
     print(f"Problem {problem.name} loaded with {N} cities and optimal weight {opt_weight}")
 
-    if opt_weight == classical_energy_tsp(problem, opt_tour):
+    if opt_weight == classical_energy_tsp(weights, opt_tour):
         print("TEST PASSED: Classical energy function returns correct optimal weight")
     else:
         print("TEST FAILED: Classical energy function returns incorrect optimal weight")
 
     rand_tour = generate_random_tour(N)
-    rand_weight = classical_energy_tsp(problem, rand_tour)
+    rand_weight = classical_energy_tsp(weights, rand_tour)
 
     # Check that random tour is valid - each node is visited once only
     valid = True
@@ -362,4 +400,6 @@ if __name__ == '__main__':
     else:
         print(" ----- TEST FAILED: tour_valid")
 
+    
+    
 
