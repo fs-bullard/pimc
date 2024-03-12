@@ -117,6 +117,11 @@ def tour_valid(tour: np.ndarray) -> bool:
         elif np.sum(tour[:][i]) != 2:
             return False
         
+    # Convert tour to list and check it contains each city once
+    tour_list = tour_to_list(tour)
+    if tour_list != [i for i in range(len(tour))]:
+        return False
+        
     return True    
 
 def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
@@ -179,6 +184,14 @@ def get_next_city(tour: np.ndarray, exclude: list[int] | None, cur: int) -> int:
 def permute(tour: np.ndarray) -> np.ndarray:
     """Generates a random permutation of tour via the two-opt method
 
+    - Selects a random city i 
+    - Finds the neighbourhood of x, h, i, j, y
+    - Selects a random city k from the rest of the tour excluding
+    h, i, j
+    - Finds the next city l after k, excluding x, h, i, j, y
+    - Changes tour from (i - j) and (k - l) to (i - k) and (j - l)
+
+
     Args:
         tour (np.ndarray): Tour to be permuted
 
@@ -187,25 +200,40 @@ def permute(tour: np.ndarray) -> np.ndarray:
     """
     N = len(tour)
 
+    # Convert the tour to a list
+    tour_list = tour_to_list(tour)
+
     while True:
         # Select a random city
+        # print('-'*20)
+        # print(tour_list)
         i = random.randint(0, N - 1)
+        # print(i)
+
+        index_i = tour_list.index(i)
+        # print(index_i)
 
         # Determine its immediate neighbours
-        h = get_next_city(tour, None, i)
-        j = get_next_city(tour, [h], i)
-
-        # And their immediate neighbours
-        x = get_next_city(tour, [i], h)
-        y = get_next_city(tour, [i], j)
+        h = tour_list[index_i - 1]
+        j = tour_list[(index_i + 1 ) % N]
 
         # Select another random city, excluding h, i and j
         k = i
         while k in [h, i, j]:
             k = random.randint(0, N - 1)
+        # print(k)
+        # Find its index
+        index_k = tour_list.index(k)
+        # print(index_k)
 
-        # And find the city after k
-        l = get_next_city(tour, [h, j, x, y], k)   
+        # And find the city after k, excluding h, j
+        if index_k > index_i:
+            l = tour_list[(index_k + 1) % N]
+        else:
+            l = tour_list[index_k - 1]
+
+            # Use h not j
+            j = h
 
         if l:
             break
@@ -252,9 +280,9 @@ def quantum_energy_tsp(weights: dict, tours: np.ndarray) -> int:
 
 if __name__ == '__main__':
     # Load problem and optimal tour
-    problem_filepath = 'tsplib/pr1002.tsp'
+    problem_filepath = 'tsplib/ulysses16.tsp'
     problem = load_tsp_instance(problem_filepath)
-    opt_filepath = 'tsplib/pr1002.opt.tour'
+    opt_filepath = 'tsplib/ulysses16.opt.tour'
     opt = load_tsp_instance(opt_filepath)
     N = problem.dimension
 
@@ -399,13 +427,28 @@ if __name__ == '__main__':
 
 
     # Test permute function
-    # while True:
-    #     test_tour = tour_to_matrix(opt.tours[0])
-    #     # print(tour_to_list(test_tour))
-    #     test_tour = permute(test_tour)
-    #     # print(tour_to_list(permuted_tour))
-    #     if not tour_valid(test_tour):
-    #         break
-    
+    while True:
+        test_tour = tour_to_matrix(opt.tours[0])
+        print(tour_to_list(test_tour))
+        test_tour = permute(test_tour)
+        cur = 0
+        prev = get_next_city(test_tour, None, cur)
+        tour_list = []
+        while True:
+            tour_list.append(cur)
+            # print(test_tour[cur])
+            cur = get_next_city(test_tour, [prev], cur)
+            prev = tour_list[-1]
+            if cur == 0:
+                break
+        print(tour_list)
+        print(tour_to_list(test_tour))
+        print(test_tour)
+        assert(tour_valid(test_tour)), 'Tour Invalid'
+        break
+        # print(sorted([i for ]))
+        # break
+        # if not tour_valid(test_tour):
+        #     break
     
 

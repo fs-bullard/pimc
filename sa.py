@@ -62,7 +62,9 @@ def simulated_annealing(
 
         for _ in range(10*N):
             # Generate a permutation of tour TODO: return dE from this to save time
-            new_tour = permute(tour)
+            new_tour = permute(tour) 
+            # print(sorted(tour_to_list(new_tour)))
+            # assert tour_valid(new_tour), 'Invalid Tour'
 
             # Calculate energy of new system
             new_E = classical_energy_tsp(weights, new_tour)
@@ -74,6 +76,8 @@ def simulated_annealing(
                 E = new_E
 
         print(f'E: {E}')
+        # if random.randint(0, 10) == 5:
+        #     print(tour_to_list(tour))
 
     # assert(tour_valid(tour)), "New tour is invalid"
     return tour, E
