@@ -31,7 +31,7 @@ def metropolis(T: float, dE: float) -> bool:
 def simulated_annealing(
         problem: tsplib95.models.StandardProblem, 
         T_schedule: list[float]
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, int]:
     """Simulates thermal annealing to solve problem. Uses a linear annealing schedule.
 
     Args:
@@ -40,9 +40,11 @@ def simulated_annealing(
 
     Returns:
         np.ndarray: tour obtained by annealing process
+        int: Ising energy of the final tour
     """
     print('-'*50, 'Simulating Annealing', '-'*50)
     print(f"Problem: {problem.name}, N={problem.dimension}")
+    print(f'Annealing Steps: {len(T_schedule)}')
 
     # Generate initial tour
     N = problem.dimension
@@ -58,9 +60,9 @@ def simulated_annealing(
 
     # Loop through annealing temperatures
     for T in T_schedule:
-        print(f'T: {T}')
+        # print(f'T: {T}')
 
-        for _ in range(10*N):
+        for _ in range(N):
             # Generate a permutation of tour TODO: return dE from this to save time
             new_tour = permute(tour) 
             # print(sorted(tour_to_list(new_tour)))
@@ -75,7 +77,7 @@ def simulated_annealing(
                 tour = new_tour
                 E = new_E
 
-        print(f'E: {E}')
+        # print(f'E: {E}')
         # if random.randint(0, 10) == 5:
         #     print(tour_to_list(tour))
 
@@ -100,11 +102,12 @@ if __name__ == "__main__":
     # Run simulated annealing on problem
     T_0 = 100
     T_f = 0.001
-    annealing_steps = 100
+    annealing_steps = 1000
     T_schedule = np.linspace(T_0, T_f, annealing_steps)
 
     annealed_tour, E = simulated_annealing(problem, T_schedule)
 
     print([i + 1 for i in tour_to_list(annealed_tour)])
-    print('Energy:', E)
+    print('Energy: ', E)
+    print('Energy / opt * 100:', (E/opt_energy - 1) * 100)
     print("Optimal energy:", opt_energy)
