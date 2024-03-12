@@ -2,8 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tsplib95
 
-from tsp import load_tsp_instance, tour_to_matrix, build_weight_dict, classical_energy_tsp
+from tsp import (
+    load_tsp_instance, 
+    tour_to_matrix, 
+    build_weight_dict, 
+    classical_energy_tsp
+    )
 from sa import simulated_annealing
+from qa import quantum_annealing
 
 def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int = 10):
     """Generates plot comparing the accuracy of optimisation methods for 
@@ -14,34 +20,74 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         opt_energy (int): length of optimal tour
         r (int): number of times to repeat each calculation
     """
-    annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
-    # annealing_steps = [10, 100, 200]
-    T_0, T_f = 100, 0.001
+    # Set width of image (inches)
+    W = 3.4
+    plt.rcParams.update({
+        'figure.figsize': (W, 3*W/4),
+        'font.size': 10,
+        'axes.labelsize': 10,
+        'font.family': 'serif',
+        'font.serif': 'Times New Roman',
+        # 'text.usetex': True
+    })
 
-    means = []
+    # annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
+    annealing_steps = [10, 100]
+    T_0, T_f = 100, 0.001
+    G_0, G_f = 300, 0.001
+    T = 10/3
+    P = 2
+
+    means_sa = []
+    means_qa = []
+
+    stds_sa = []
+    stds_qa = []
 
     for num in annealing_steps:
         T_schedule = np.linspace(T_0, T_f, num)
+        G_schedule = np.linspace(G_0, G_f, num)
 
-        lengths = []
-        stds = []
+        lengths_sa = []
+        lengths_qa = []        
 
         for _ in range(r):
             tour, E = simulated_annealing(problem, T_schedule)
-            lengths.append(E)
-        
-        mean = np.mean(lengths)
-        std = np.std(lengths)
+            lengths_sa.append(E)
 
-        means.append(mean)
-        stds.append(std)
+            tour, E = quantum_annealing(problem, G_schedule, T, P)
+            lengths_qa.append(E)
+
+        means_sa.append(np.mean(lengths_sa))
+        stds_sa.append(np.std(lengths_sa))
+
+        means_qa.append(np.mean(lengths_qa))
+        stds_qa.append(np.std(lengths_qa))
     
-    plt.errorbar(annealing_steps, 100*(np.array(means) / opt_energy - 1),
-                yerr=100*(np.array(stds) / opt_energy), marker='o', fmt='o-', capsize=3, color='black')
+    plt.errorbar(
+        annealing_steps, 
+        100*(np.array(means_sa) / opt_energy - 1),
+        yerr=100*(np.array(stds_sa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        capsize=3, 
+        color='black',
+        label='SA'
+    )
+
+    plt.errorbar(
+        annealing_steps, 
+        100*(np.array(means_qa) / opt_energy - 1),
+        yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        capsize=3, 
+        color='red',
+        label='QA'
+    )
 
     plt.xscale('log')
-    plt.xlabel('Number of Monte Carlo Steps')
+    plt.xlabel('log(Number of Monte Carlo Steps)')
     plt.ylabel('Excess Length After Annealing (%)')
+    plt.legend()
 
     # Add minor ticks on the x-axis
     plt.minorticks_on()
@@ -49,7 +95,11 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
     # Customize the appearance of the minor ticks
     plt.tick_params(which='minor', size=3, width=1, direction='in')
 
-    plt.savefig(f'figures/{problem.name}/annealing_steps.jpg', dpi=600)
+    plt.savefig(
+        f'figures/{problem.name}/annealing_steps.jpg', 
+        dpi=1000,
+        bbox_inches='tight'
+        )
     plt.show()
 
 def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int):
@@ -86,7 +136,7 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         stds.append(std)
     
     plt.errorbar(temperatures, 100*(np.array(means) / opt_energy - 1),
-                yerr=100*(np.array(stds) / opt_energy*np.sqrt(r)), marker='o', fmt='o-', 
+                yerr=100*(np.array(stds) / (opt_energy*np.sqrt(r))), marker='o', fmt='o-', 
                 capsize=3, color='black')
 
     plt.xlabel('Initial Annealing Temperature (T_0)')
@@ -118,7 +168,7 @@ if __name__ == "__main__":
     print("Optimal energy:", opt_energy)
 
     # Generate plot comparing performance for different number of annealing steps
-    compare_annealing_steps(problem, opt_energy, 20)
+    compare_annealing_steps(problem, opt_energy, 3)
 
     # Generate plot comparing performance for different initial temps
-    compare_starting_temperature(problem, opt_energy, 20)
+    # compare_starting_temperature(problem, opt_energy, 20)
