@@ -14,7 +14,8 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         opt_energy (int): length of optimal tour
         r (int): number of times to repeat each calculation
     """
-    annealing_steps = [10, 50, 75, 100, 150, 200, 500, 1000]
+    annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
+    # annealing_steps = [10, 100, 200]
     T_0, T_f = 100, 0.001
 
     means = []
@@ -36,22 +37,77 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         stds.append(std)
     
     plt.errorbar(annealing_steps, 100*(np.array(means) / opt_energy - 1),
-                yerr=100*(np.array(stds) / opt_energy), marker='o', color='black')
+                yerr=100*(np.array(stds) / opt_energy), marker='o', fmt='o-', capsize=3, color='black')
 
     plt.xscale('log')
     plt.xlabel('Number of Monte Carlo Steps')
     plt.ylabel('Excess Length After Annealing (%)')
 
+    # Add minor ticks on the x-axis
+    plt.minorticks_on()
+
+    # Customize the appearance of the minor ticks
+    plt.tick_params(which='minor', size=3, width=1, direction='in')
+
     plt.savefig(f'figures/{problem.name}/annealing_steps.jpg', dpi=600)
+    plt.show()
+
+def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int):
+    """Generates plot comparing the accuracy of optimisation methods for 
+    different starting temperature
+
+    Args:
+        problem (tsplib95.models.StandardProblem): TSP of interest
+        opt_energy (int): length of optimal tour
+        r (int): number of times to repeat each calculation
+    """
+    # temperatures = [50, 75, 100, 150, 200, 500, 1000]
+    temperatures = [1, 5, 10, 20, 30, 40, 50, 75, 100, 200]
+    annealing_steps = 100
+
+    T_f = 0.001
+
+    means = []
+
+    for T_0 in temperatures:
+        T_schedule = np.linspace(T_0, T_f, annealing_steps)
+
+        lengths = []
+        stds = []
+
+        for _ in range(r):
+            tour, E = simulated_annealing(problem, T_schedule)
+            lengths.append(E)
+        
+        mean = np.mean(lengths)
+        std = np.std(lengths)
+
+        means.append(mean)
+        stds.append(std)
+    
+    plt.errorbar(temperatures, 100*(np.array(means) / opt_energy - 1),
+                yerr=100*(np.array(stds) / opt_energy*np.sqrt(r)), marker='o', fmt='o-', 
+                capsize=3, color='black')
+
+    plt.xlabel('Initial Annealing Temperature (T_0)')
+    plt.ylabel('Excess Length After Annealing (%)')
+
+    # Add minor ticks on the x-axis
+    plt.minorticks_on()
+
+    # Customize the appearance of the minor ticks
+    plt.tick_params(which='minor', size=3, width=1, direction='in')
+
+    plt.savefig(f'figures/{problem.name}/init_temp.jpg', dpi=600)
     plt.show()
 
 if __name__ == "__main__":
     print("Generating Plots")
 
     # Load problem and optimal tour
-    problem_filepath = 'tsplib/bays29.tsp' 
+    problem_filepath = 'tsplib/ulysses16.tsp' 
     problem = load_tsp_instance(problem_filepath)
-    opt_filepath = 'tsplib/bays29.opt.tour'
+    opt_filepath = 'tsplib/ulysses16.opt.tour'
     opt = load_tsp_instance(opt_filepath)
     opt_tour = tour_to_matrix(opt.tours[0])
     
@@ -62,4 +118,7 @@ if __name__ == "__main__":
     print("Optimal energy:", opt_energy)
 
     # Generate plot comparing performance for different number of annealing steps
-    compare_annealing_steps(problem, opt_energy, 3)
+    compare_annealing_steps(problem, opt_energy, 20)
+
+    # Generate plot comparing performance for different initial temps
+    compare_starting_temperature(problem, opt_energy, 20)
