@@ -86,7 +86,7 @@ def tour_to_list(tour: np.ndarray) -> list[int]:
     i = 0
     while i < len(tour):
         tour_list.append(cur)
-        cur = get_next_city(tour, prev, cur)
+        cur = get_next_city(tour, [prev], cur)
         prev = tour_list[-1]
 
         i += 1
@@ -177,7 +177,7 @@ def generate_M_random_neighbours(N:int, prev: int, next: int, M = 14) -> list:
     
 
 def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
-    """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->l) and (j<->k)
+    """Conducts a two opt move swapping connections (i<->j) and (k<->l) to (i<->k) and (j<->l)
 
     Args:
         tour (np.ndarray)
@@ -196,19 +196,21 @@ def two_opt_move(tour: np.ndarray, i: int, j: int, k:int, l: int) -> np.ndarray:
     tour[l][k] = 0
 
     # Construct new links
-    tour[i][l] = 1
-    tour[l][i] = 1
-    tour[j][k] = 1
-    tour[k][j] = 1
+    tour[i][k] = 1
+    tour[k][i] = 1
+    tour[j][l] = 1
+    tour[l][j] = 1
+
+    assert tour_valid(tour), "Two_opt_move generated invalid tour"
     
     return tour
 
-def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
+def get_next_city(tour: np.ndarray, exclude: list[int] | None, cur: int) -> int:
     """Returns the next city in the tour
 
     Args:
         tour (np.ndarray): current tour
-        prev (int / None): previous city or None if happy with any
+        exclude (list(int) | None): list of cities to exclude, or None
         cur (int): current city (between 0 and N-1)
 
     Returns:
@@ -220,17 +222,55 @@ def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
     # Find which cities are connected to cur
     args = np.argwhere(col)
 
-    if prev != None:
-        # Check prev is in args
-        assert prev in args, "ERROR getting next city, prev incorrect"
-
-        # Return the city that isn't prev
+    if exclude != None:
+        # Return a city that isn't excluded
         for arg in args:
-            if arg[0] != prev:
+            if arg[0] not in exclude:
                 return arg[0]
     else:
         # Just return the first city
         return args[0][0]
+    
+def permute(tour: np.ndarray) -> np.ndarray:
+    """Generates a random permutation of tour via the two-opt method
+
+    Args:
+        tour (np.ndarray): Tour to be permuted
+
+    Returns:
+        np.ndarray: Random two-opt permutation of tour
+    """
+    N = len(tour)
+
+    while True:
+        # Select a random city
+        i = random.randint(0, N - 1)
+
+        # Determine its immediate neighbours
+        h = get_next_city(tour, None, i)
+        j = get_next_city(tour, [h], i)
+
+        # And their immediate neighbours
+        x = get_next_city(tour, [i], h)
+        y = get_next_city(tour, [i], j)
+
+        # Select another random city, excluding h, i and j
+        k = i
+        while k in [h, i, j]:
+            k = random.randint(0, N - 1)
+
+        # And find the city after k
+        l = get_next_city(tour, [h, j, x, y], k)   
+
+        if l:
+            break
+
+    # Conduct a two-opt move
+    new_tour = two_opt_move(deepcopy(tour), i, j, k, l)
+
+    assert tour_valid, "Permute generated an invalid tour"
+    
+    return new_tour
 
 def classical_energy_tsp(weights: dict, tour: np.ndarray) -> int:
     """Returns the total weight of a given tour
@@ -269,9 +309,9 @@ def quantum_energy_tsp(weights: dict, tours: np.ndarray) -> int:
 
 if __name__ == '__main__':
     # Load problem and optimal tour
-    problem_filepath = 'tsplib/pr1002.tsp'
+    problem_filepath = 'tsplib/bays29.tsp'
     problem = load_tsp_instance(problem_filepath)
-    opt_filepath = 'tsplib/pr1002.opt.tour'
+    opt_filepath = 'tsplib/bays29.opt.tour'
     opt = load_tsp_instance(opt_filepath)
     N = problem.dimension
 
@@ -344,7 +384,7 @@ if __name__ == '__main__':
         print(" ----- TEST FAILED: two_opt_move was unsuccessful")
         
     # Test get_next_city with a previous city
-    next_city = get_next_city(two_opt_tour, 0, 3)
+    next_city = get_next_city(two_opt_tour, [0], 3)
     if next_city == 4:
         print("TEST PASSED: get_next_city was successful")
     else:
@@ -359,12 +399,12 @@ if __name__ == '__main__':
 
     # Check get_next_city can reproduce the correct tour for opt_tour
     cur = 0
-    prev = 75
+    prev = tour_to_list(opt_tour)[-1]
     tour = []
     i = 0
     while i < N:
         tour.append(cur + 1)
-        next = get_next_city(opt_tour, prev, cur)
+        next = get_next_city(opt_tour, [prev], cur)
         prev = cur
         cur = next
 
@@ -413,6 +453,13 @@ if __name__ == '__main__':
     else:
         print(" ----- TEST FAILED: tour_valid")
 
+
+    # Test permute function
+    # while True:
+    #     test_tour = tour_to_matrix(opt.tours[0])
+    #     print(tour_to_list(test_tour))
+    #     permuted_tour = permute(test_tour)
+    #     print(tour_to_list(permuted_tour))
     
     
 
