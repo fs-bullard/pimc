@@ -142,7 +142,7 @@ def generate_M_neighbours(N:int, weights: dict, cur: int, M: int = 20) -> list:
     # Extract the indices from the tuples
     return [i for i, _ in nearest_neighbours]
 
-def build_neighbours_dict(N: int, weights: dict, M: int = 20) -> dict:
+def build_neighbours_dict(N: int, weights: dict, M: int = 16) -> dict:
     """Returns a dictionary of the M nearest neighbours to each city
 
     Args:
@@ -159,7 +159,7 @@ def build_neighbours_dict(N: int, weights: dict, M: int = 20) -> dict:
 
     return neighbours_dict
 
-def generate_M_random_neighbours(N:int, prev: int, next: int, M = 25) -> list:
+def generate_M_random_neighbours(N:int, prev: int, next: int, M = 14) -> list:
     """Generates a list of M random cities excluding prev and next
 
     Args:
@@ -232,7 +232,7 @@ def get_next_city(tour: np.ndarray, prev: int | None, cur: int) -> int:
         # Just return the first city
         return args[0][0]
 
-def classical_energy_tsp(weights: dict, tour: np.ndarray):
+def classical_energy_tsp(weights: dict, tour: np.ndarray) -> int:
     """Returns the total weight of a given tour
 
     Args:
@@ -249,9 +249,22 @@ def classical_energy_tsp(weights: dict, tour: np.ndarray):
             if tour[i][j]:
                 H += weights[(i, j)]
 
-    return H / 2
+    return H // 2
 
-def quantum_energy_tsp():
+def quantum_energy_tsp(weights: dict, tours: np.ndarray) -> int:
+    """Returns the total weight of a given tour summed over Trotter slices 
+    plus the sum of the interactions between neighbouring Trotter slices
+
+    Args:
+        weights (dict): _description_
+        tours (np.ndarray): NxNxP array
+
+    Returns:
+        int: _description_
+    """
+    H = 0
+    P = len(tours)
+
     return
 
 if __name__ == '__main__':

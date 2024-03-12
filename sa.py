@@ -1,6 +1,7 @@
 import numpy as np
 import tsplib95
 from copy import deepcopy
+import random
 
 from tsp import load_tsp_instance, classical_energy_tsp, generate_random_tour, two_opt_move, build_weight_dict
 from tsp import build_neighbours_dict, tour_to_list, tour_valid, tour_to_matrix, generate_M_random_neighbours
@@ -43,6 +44,9 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
     N = problem.dimension
     tour = generate_random_tour(N)
 
+    # or, try with a list tour
+    # tour = tour_to_matrix([1, 29, 3, 26, 5, 12, 9, 6, 28, 24, 8, 27, 16, 23, 7, 25, 11, 19, 13, 10, 15, 22, 14, 17, 18, 4, 20, 2, 21])
+
     weights = build_weight_dict(problem)
     neighbours_dict = build_neighbours_dict(N, weights)
 
@@ -67,10 +71,11 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
 
             # Generate the neighbourhood of the next city in the tour
             # neighbours = neighbours_dict[cur]
-            neighbours = generate_M_random_neighbours(N, prev, next)
+            # neighbours = generate_M_random_neighbours(N, prev, next, N-2)
 
             # Loop through each of the next city's neighbours
-            for neighbour in neighbours:
+            for neighbour in random.shuffle(tour_list[i - 5:(i + 5)%N]):
+            # for neighbour in neighbours:
                 # If prev, cur or next are in neighbours ignore them
                 if neighbour in [prev, cur, next]:
                     continue
@@ -79,7 +84,10 @@ def simulated_annealing(problem: tsplib95.models.StandardProblem,
                 before_neighbour = tour_list[tour_list.index(neighbour) - 1]
 
                 # Make a two-opt move
+                # print(tour_to_list(tour))
                 new_tour = two_opt_move(deepcopy(tour), cur, next, neighbour, before_neighbour)
+                # print(tour_to_list(new_tour))
+                # return
 
                 # Calculate energy of new system
                 new_E = classical_energy_tsp(weights, new_tour)
@@ -111,13 +119,13 @@ if __name__ == "__main__":
     print("Optimal energy:", opt_energy)
 
     # Run simulated annealing on problem
-    T_0 = 150
+    T_0 = 100
     T_f = 0.001
-    annealing_steps = 1000
+    annealing_steps = 100
     T_schedule = np.linspace(T_0, T_f, annealing_steps)
 
     annealed_tour, E = simulated_annealing(problem, T_schedule)
 
-    print(tour_to_list(annealed_tour))
+    print([i + 1 for i in tour_to_list(annealed_tour)])
     print('Energy:', E)
-    print(classical_energy_tsp(weights, annealed_tour))
+    print("Optimal energy:", opt_energy)
