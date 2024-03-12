@@ -5,6 +5,8 @@ import heapq
 from copy import deepcopy
 
 def load_tsp_instance(filepath: str):
+    """Load an instance of the tsp from .tsp file
+    """
     return tsplib95.load(filepath)
 
 def get_tour_dist(problem: tsplib95.models.StandardProblem, tour: list):
@@ -119,7 +121,7 @@ def tour_valid(tour: np.ndarray) -> bool:
         
     # Convert tour to list and check it contains each city once
     tour_list = tour_to_list(tour)
-    if tour_list != [i for i in range(len(tour))]:
+    if sorted(tour_list) != [i for i in range(len(tour))]:
         return False
         
     return True    
@@ -243,6 +245,73 @@ def permute(tour: np.ndarray) -> np.ndarray:
 
     return new_tour
 
+def quantum_permute(tours: np.ndarray, slice: int) -> np.ndarray:
+    """Generates a random permutation of tours by permuting slice via the two-opt method
+
+    - Selects a random city i 
+    - Finds the neighbourhood of x, h, i, j, y
+    - Selects a random city k from the rest of the tour excluding
+    h, i, j
+    - Finds the next city l after k, excluding x, h, i, j, y
+    - Changes tour from (i - j) and (k - l) to (i - k) and (j - l)
+
+    Args:
+        tour (np.ndarray): Tours to be permuted
+        slice (int): Trotter slice to permute
+
+    Returns:
+        np.ndarray: Random two-opt permutation of tours
+    """
+    tour = tours[slice]
+
+    N = len(tour)
+
+    # Convert the tour to a list
+    tour_list = tour_to_list(tour)
+
+    while True:
+        # Select a random city
+        # print('-'*20)
+        # print(tour_list)
+        i = random.randint(0, N - 1)
+        # print(i)
+
+        index_i = tour_list.index(i)
+        # print(index_i)
+
+        # Determine its immediate neighbours
+        h = tour_list[index_i - 1]
+        j = tour_list[(index_i + 1 ) % N]
+
+        # Select another random city, excluding h, i and j
+        k = i
+        while k in [h, i, j]:
+            k = random.randint(0, N - 1)
+        # print(k)
+        # Find its index
+        index_k = tour_list.index(k)
+        # print(index_k)
+
+        # And find the city after k, excluding h, j
+        if index_k > index_i:
+            l = tour_list[(index_k + 1) % N]
+        else:
+            l = tour_list[index_k - 1]
+
+            # Use h not j
+            j = h
+
+        if l:
+            break
+
+    # Conduct a two-opt move
+    new_tour = two_opt_move(deepcopy(tour), i, j, k, l)
+
+    new_tours = deepcopy(tours)
+    new_tours[slice] = new_tour
+
+    return new_tours
+
 def classical_energy_tsp(weights: dict, tour: np.ndarray) -> int:
     """Returns the total weight of a given tour
 
@@ -262,21 +331,35 @@ def classical_energy_tsp(weights: dict, tour: np.ndarray) -> int:
 
     return H // 2
 
-def quantum_energy_tsp(weights: dict, tours: np.ndarray) -> int:
+def quantum_energy_tsp(weights: dict, tours: np.ndarray, J_perp: float) -> int:
     """Returns the total weight of a given tour summed over Trotter slices 
     plus the sum of the interactions between neighbouring Trotter slices
+
+    H = -\sum_k^P( \sum_ij J_ij s^k_i s^k_j + J_perp \sum_i s^k_i s^k+1_i )
 
     Args:
         weights (dict): _description_
         tours (np.ndarray): NxNxP array
+        J_perp (float): The coupling along the Trotter slices
 
     Returns:
         int: _description_
     """
     H = 0
     P = len(tours)
+    N = len(tours[0])
 
-    return
+    # Sum the classical energy over the Trotter slices
+    for tour in tours:
+        H += classical_energy_tsp(weights, tour)
+
+    # Now loop over the Trotter slices
+    for i in range(P):
+        for j in range(N):
+            for k in range(N):
+                H += J_perp*(2*tours[i][j][k] - 1)*(2*tours[i - 1][j][k] - 1) # Should this be halved?
+
+    return H
 
 if __name__ == '__main__':
     # Load problem and optimal tour
@@ -427,25 +510,25 @@ if __name__ == '__main__':
 
 
     # Test permute function
-    while True:
-        test_tour = tour_to_matrix(opt.tours[0])
-        print(tour_to_list(test_tour))
-        test_tour = permute(test_tour)
-        cur = 0
-        prev = get_next_city(test_tour, None, cur)
-        tour_list = []
-        while True:
-            tour_list.append(cur)
-            # print(test_tour[cur])
-            cur = get_next_city(test_tour, [prev], cur)
-            prev = tour_list[-1]
-            if cur == 0:
-                break
-        print(tour_list)
-        print(tour_to_list(test_tour))
-        print(test_tour)
-        assert(tour_valid(test_tour)), 'Tour Invalid'
-        break
+    # while True:
+    #     test_tour = tour_to_matrix(opt.tours[0])
+    #     print(tour_to_list(test_tour))
+    #     test_tour = permute(test_tour)
+    #     cur = 0
+    #     prev = get_next_city(test_tour, None, cur)
+    #     tour_list = []
+    #     while True:
+    #         tour_list.append(cur)
+    #         # print(test_tour[cur])
+    #         cur = get_next_city(test_tour, [prev], cur)
+    #         prev = tour_list[-1]
+    #         if cur == 0:
+    #             break
+    #     print(tour_list)
+    #     print(tour_to_list(test_tour))
+    #     print(test_tour)
+    #     assert(tour_valid(test_tour)), 'Tour Invalid'
+    #     break
         # print(sorted([i for ]))
         # break
         # if not tour_valid(test_tour):
