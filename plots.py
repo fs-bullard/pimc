@@ -31,12 +31,12 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         'text.usetex': True
     })
 
-    # annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
-    annealing_steps = [50, 200, 1000]
+    annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
+    # annealing_steps = [50, 200, 1000]
     T_0, T_f = 100, 0.001
     G_0, G_f = 300, 0.001
-    T = 10/3
-    P = 2
+    T = 10
+    P = 10
 
     means_sa = []
     means_qa = []
@@ -113,6 +113,8 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
     """Generates plot comparing the accuracy of optimisation methods for 
     different starting temperature
 
+    for qa compare PT - can use the same axis
+
     Args:
         problem (tsplib95.models.StandardProblem): TSP of interest
         opt_energy (int): length of optimal tour
@@ -172,6 +174,9 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         bbox_inches='tight'
     )
     plt.show()
+
+def compare_trotter_number():
+    return
 
 if __name__ == "__main__":
     print("Generating Plots")
