@@ -90,7 +90,7 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
     )
 
     plt.xscale('log')
-    plt.xlabel(r'Number of Monte Carlo Steps')
+    plt.xlabel(r'Number of Monte Carlo Steps $\tau$')
     plt.ylabel(r'Excess Length ($\%$)')
     plt.legend()
 
@@ -131,52 +131,154 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         'text.usetex': True
     })
 
-    # temperatures = [50, 75, 100, 150, 200, 500, 1000]
+    # temperatures = [50, 1000]
     temperatures = [1, 5, 10, 20, 30, 40, 50, 75, 100, 200]
     annealing_steps = 100
+    P = 10
 
     T_f = 0.001
+    G_0, G_f = 300, 0.001
 
-    means = []
+    means_sa = []
+    means_qa = []
+
+    stds_sa = []
+    stds_qa = []
 
     for T_0 in temperatures:
         T_schedule = np.linspace(T_0, T_f, annealing_steps)
+        G_schedule = np.linspace(G_0, G_f, annealing_steps)
 
-        lengths = []
-        stds = []
+        lengths_sa = []
+        lengths_qa = []  
 
         for _ in range(r):
             tour, E = simulated_annealing(problem, T_schedule)
-            lengths.append(E)
+            lengths_sa.append(E)
+
+            T = T_0 / P
+            tour, E = quantum_annealing(problem, G_schedule, T, P)
+            lengths_qa.append(E)
+
         
-        mean = np.mean(lengths)
-        std = np.std(lengths)
+        means_sa.append(np.mean(lengths_sa))
+        stds_sa.append(np.std(lengths_sa))
 
-        means.append(mean)
-        stds.append(std)
+        means_qa.append(np.mean(lengths_qa))
+        stds_qa.append(np.std(lengths_qa))
     
-    plt.errorbar(temperatures, 100*(np.array(means) / opt_energy - 1),
-                yerr=100*(np.array(stds) / (opt_energy*np.sqrt(r))), marker='o', fmt='o-', 
-                capsize=3, color='black')
+    plt.errorbar(
+        temperatures, 
+        100*(np.array(means_sa) / opt_energy - 1),
+        yerr=100*(np.array(stds_sa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        markersize=4,
+        capsize=2, 
+        color='black',
+        label='SA',
+        linewidth=1
+    )
 
-    plt.xlabel('Initial Annealing Temperature (T_0)')
-    plt.ylabel('Excess Length After Annealing (%)')
+    plt.errorbar(
+        temperatures, 
+        100*(np.array(means_qa) / opt_energy - 1),
+        yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        markersize=4,
+        capsize=2, 
+        color='red',
+        label='QA',
+        linewidth=1
+    )
+
+    plt.xlabel(r'$T_0$ and $PT$')
+    plt.ylabel(r'Excess Length ($\%$)')
+    plt.legend()
 
     # Add minor ticks on the x-axis
     plt.minorticks_on()
 
     # Customize the appearance of the minor ticks
-    plt.tick_params(which='minor', size=3, width=1, direction='in')
+    plt.tick_params(which='minor', size=1.5, width=0.7, direction='in', )
+    plt.tick_params(which='both', direction='in', top=True, right=True)
 
     plt.savefig(
         f'figures/{problem.name}/init_temp.jpg', 
         dpi=1000,
         bbox_inches='tight'
     )
-    plt.show()
+    # plt.show()
 
-def compare_trotter_number():
-    return
+def compare_trotter_number(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int = 10):
+    """Generates plot comparing the accuracy of optimisation methods for 
+    different Trotter numbers
+
+    Args:
+        problem (tsplib95.models.StandardProblem): TSP of interest
+        opt_energy (int): length of optimal tour
+        r (int): number of times to repeat each calculation
+    """
+    # Set width of image (inches)
+    W = 3.2
+    plt.rcParams.update({
+        'figure.figsize': (W, 3*W/4),
+        'font.size': 8,
+        'axes.labelsize': 10,
+        'font.family': 'serif',
+        'font.serif': 'Times New Roman',
+        'text.usetex': True
+    })
+
+    trotter_numbers = [1, 2, 5, 10, 30]
+
+    G_0, G_f = 300, 0.001
+    PT = 100
+    annealing_steps = 100
+
+    means_qa = []
+    stds_qa = []
+
+    for P in trotter_numbers:
+        G_schedule = np.linspace(G_0, G_f, annealing_steps)
+
+        lengths_qa = []
+
+        for _ in range(r):
+            tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
+            lengths_qa.append(E)
+
+        means_qa.append(np.mean(lengths_qa))
+        stds_qa.append(np.std(lengths_qa))
+
+    plt.errorbar(
+        trotter_numbers, 
+        100*(np.array(means_qa) / opt_energy - 1),
+        yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        markersize=4,
+        capsize=2, 
+        color='red',
+        label='QA',
+        linewidth=1
+    )
+
+    plt.xlabel(r'Trotter Number $P$')
+    plt.ylabel(r'Excess Length ($\%$)')
+
+    # Add minor ticks on the x-axis
+    plt.minorticks_on()
+
+    # Customize the appearance of the minor ticks
+    plt.tick_params(which='minor', size=1.5, width=0.7, direction='in')
+    plt.tick_params(which='both', direction='in', top=True, right=True)
+
+
+    plt.savefig(
+        f'figures/{problem.name}/trotter_number.jpg', 
+        dpi=1000,
+        bbox_inches='tight'
+    )
+    # plt.show()
 
 if __name__ == "__main__":
     print("Generating Plots")
@@ -195,7 +297,10 @@ if __name__ == "__main__":
     print("Optimal energy:", opt_energy)
 
     # Generate plot comparing performance for different number of annealing steps
-    compare_annealing_steps(problem, opt_energy, 3)
+    # compare_annealing_steps(problem, opt_energy, 3)
 
-    # Generate plot comparing performance for different initial temps
-    # compare_starting_temperature(problem, opt_energy, 20)
+    # Generate plot comparing performance for different initial temps / PT
+    # compare_starting_temperature(problem, opt_energy, 3)
+
+    # Generate plot comparing performance for different Trotter numbers
+    compare_trotter_number(problem, opt_energy, 3)

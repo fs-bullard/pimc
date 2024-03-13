@@ -1,7 +1,6 @@
 import tsplib95
 import numpy as np
 import random
-import heapq
 from copy import deepcopy
 
 def load_tsp_instance(filepath: str):

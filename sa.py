@@ -50,9 +50,6 @@ def simulated_annealing(
     N = problem.dimension
     tour = generate_random_tour(N)
     
-    # or, try with a list tour
-    # tour = tour_to_matrix([1, 29, 3, 26, 5, 12, 9, 6, 28, 24, 8, 27, 16, 23, 7, 25, 11, 19, 13, 10, 15, 22, 14, 17, 18, 4, 20, 2, 21])
-
     weights = build_weight_dict(problem)
 
     # Calculate energy of this tour
@@ -65,8 +62,6 @@ def simulated_annealing(
         for _ in range(N):
             # Generate a permutation of tour TODO: return dE from this to save time
             new_tour = permute(tour) 
-            # print(sorted(tour_to_list(new_tour)))
-            # assert tour_valid(new_tour), 'Invalid Tour'
 
             # Calculate energy of new system
             new_E = classical_energy_tsp(weights, new_tour)
@@ -77,11 +72,6 @@ def simulated_annealing(
                 tour = new_tour
                 E = new_E
 
-        # print(f'E: {E}')
-        # if random.randint(0, 10) == 5:
-        #     print(tour_to_list(tour))
-
-    # assert(tour_valid(tour)), "New tour is invalid"
     return tour, E
 
 
@@ -97,10 +87,9 @@ if __name__ == "__main__":
 
     # Set optimal solution
     opt_energy = classical_energy_tsp(weights, opt_tour)
-    print("Optimal energy:", opt_energy)
 
     # Run simulated annealing on problem
-    T_0 = 100
+    T_0 = 150
     T_f = 0.001
     annealing_steps = 1000
     T_schedule = np.linspace(T_0, T_f, annealing_steps)

@@ -64,6 +64,7 @@ def quantum_annealing(
     print('-'*50, 'Quantum Annealing', '-'*50)
     print(f"Problem: {problem.name}, N={problem.dimension}")
     print(f'Annealing Steps: {len(G_schedule)}')
+    print(f'Trotter Number: ', P)
 
     # Generate initial tour
     N = problem.dimension
@@ -79,7 +80,7 @@ def quantum_annealing(
 
     # Loop through annealing temperatures
     for G in G_schedule:
-        print(f'G: {G}')
+        # print(f'G: {G}')
 
         # Calculate J_perp
         J_perp = get_J_perp(P, T, G)
@@ -115,9 +116,9 @@ def quantum_annealing(
 
 if __name__ == "__main__":
     # Load problem and optimal tour
-    problem_filepath = 'tsplib/ulysses16.tsp' 
+    problem_filepath = 'tsplib/berlin52.tsp' 
     problem = load_tsp_instance(problem_filepath)
-    opt_filepath = 'tsplib/ulysses16.opt.tour'
+    opt_filepath = 'tsplib/berlin52.opt.tour'
     opt = load_tsp_instance(opt_filepath)
     opt_tour = tour_to_matrix(opt.tours[0])
     
@@ -130,13 +131,13 @@ if __name__ == "__main__":
     # Run quantum annealing on problem
     G_0 = 300
     G_f = 0.001
-    T = 10/3
-    P = 30
+    PT = 50
+    P = 10
 
-    annealing_steps = 30
+    annealing_steps = 200
     G_schedule = np.linspace(G_0, G_f, annealing_steps)
 
-    annealed_tour, E = quantum_annealing(problem, G_schedule, T, P)
+    annealed_tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
 
     print([i + 1 for i in tour_to_list(annealed_tour)])
     print('Energy: ', E)
