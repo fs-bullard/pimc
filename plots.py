@@ -32,62 +32,87 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
     })
 
     # Simulate for SA
-    annealing_steps_sa = [50, 75, 100, 150, 200, 350, 500, 1000, 2000, 5000, 10000]
-    # annealing_steps_sa = [50, 100] # For testing
-    T_0, T_f = 100, 0.001
+    # annealing_steps_sa = [50, 75, 100, 150, 200, 350, 500, 1000, 2000, 5000, 10000]
+    # annealing_steps_sa = [35] # For testing
+    # T_0, T_f = 100, 0.001
 
-    means_sa = []
-    stds_sa = []
+    # means_sa = []
+    # stds_sa = []
 
-    for num in annealing_steps_sa:
-        print(f'annealing steps: {num}')
-        T_schedule = np.linspace(T_0, T_f, num)
+    # for num in annealing_steps_sa:
+    #     print(f'annealing steps: {num}')
+    #     T_schedule = np.linspace(T_0, T_f, num)
 
-        lengths_sa = []
+    #     lengths_sa = []
 
-        for _ in range(r):
-            print('repeat:', str(_))       
-            tour, E = simulated_annealing(problem, T_schedule)
-            lengths_sa.append(E)
+    #     for _ in range(r):
+    #         print('repeat:', str(_))       
+    #         tour, E = simulated_annealing(problem, T_schedule)
+    #         lengths_sa.append(E)
 
-        means_sa.append(np.mean(lengths_sa))
-        stds_sa.append(np.std(lengths_sa))
+    #     means_sa.append(np.mean(lengths_sa))
+    #     stds_sa.append(np.std(lengths_sa))
 
-    # Repeat for QA, excluding the really high numbers
-    annealing_steps = [50, 75, 100, 150, 200, 350, 500, 1000]
-    # annealing_steps = [50, 100] # For testing
+    # print(means_sa)
+    # print(stds_sa)
+    # return
 
-    G_0, G_f = 300, 0.001
-    PT = 50
-    P = 10
+    # # Repeat for QA, excluding the really high numbers
+    annealing_steps = [15, 25, 50, 75, 100, 150, 200, 350, 500, 1000]
+    # annealing_steps = [15] # For testing
 
-    means_qa = []
-    stds_qa = []
+    # G_0, G_f = 300, 0.001
+    # PT = 50
+    # P = 10
 
-    for num in annealing_steps:
-        print(f'annealing steps: {num}')
+    # means_qa = []
+    # stds_qa = []
 
-        G_schedule = np.linspace(G_0, G_f, num)
+    # for num in annealing_steps:
+    #     print(f'annealing steps: {num}')
 
-        lengths_qa = []        
+    #     G_schedule = np.linspace(G_0, G_f, num)
 
-        for _ in range(r):     
-            print('repeat:', str(_))       
-            tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
-            lengths_qa.append(E)
+    #     lengths_qa = []        
 
-        means_qa.append(np.mean(lengths_qa))
-        stds_qa.append(np.std(lengths_qa))
+    #     for _ in range(r):     
+    #         print('repeat:', str(_))       
+    #         tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
+    #         lengths_qa.append(E)
 
-    # Save the data
-    data = {
-        "annealing_steps": annealing_steps_sa,
-        "means_sa": means_sa,
-        "stds_sa": stds_sa,
-        "means_qa": means_qa,
-        "stds_qa": stds_qa,
-    }
-    np.savez(f'data/{problem.name}/annealing_steps_data.npz', **data)
+    #     means_qa.append(np.mean(lengths_qa))
+    #     stds_qa.append(np.std(lengths_qa))
+    
+    # print(means_qa)
+    # print(stds_qa)
+
+    # return
+
+    # # Save the data
+    # data = {
+    #     "annealing_steps": annealing_steps_sa,
+    #     "means_sa": means_sa,
+    #     "stds_sa": stds_sa,
+    #     "means_qa": means_qa,
+    #     "stds_qa": stds_qa,
+    # }
+    # np.savez(f'data/{problem.name}/annealing_steps_data.npz', **data)
+
+    # Or load data from file 
+    data = np.load('data/ulysses16/annealing_steps_data_good.npz')
+
+    annealing_steps_sa = data['annealing_steps']
+    means_sa = data['means_sa']
+    stds_sa = data['stds_sa']
+    means_qa = data['means_qa']
+    stds_qa = data['stds_qa']
+
+    means_sa = [6951.3] + list(means_sa)
+    stds_sa = [81.27859496817105] + list(stds_sa)
+    annealing_steps_sa = [35] + list(annealing_steps_sa)
+
+    means_qa = [6994.1, 6909.4] + list(means_qa)
+    stds_qa = [78.91698169595692, 30.65517900779573] + list(stds_qa)
     
     plt.errorbar(
         annealing_steps_sa, 
