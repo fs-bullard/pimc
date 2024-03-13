@@ -357,7 +357,7 @@ def quantum_energy_tsp(weights: dict, tours: np.ndarray, J_perp: float) -> int:
     for i in range(P):
         for j in range(N):
             for k in range(N):
-                H += J_perp*(2*tours[i][j][k] - 1)*(2*tours[i - 1][j][k] - 1) # Should this be halved?
+                H += J_perp*(2*tours[i][j][k] - 1)*(2*tours[i - 1][j][k] - 1) / 2
 
     return H
 

@@ -21,22 +21,22 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         r (int): number of times to repeat each calculation
     """
     # Set width of image (inches)
-    W = 3.4
+    W = 3.2
     plt.rcParams.update({
         'figure.figsize': (W, 3*W/4),
-        'font.size': 10,
+        'font.size': 8,
         'axes.labelsize': 10,
         'font.family': 'serif',
         'font.serif': 'Times New Roman',
-        # 'text.usetex': True
+        'text.usetex': True
     })
 
-    # annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
-    annealing_steps = [10, 100]
+    annealing_steps = [50, 75, 100, 150, 200, 500, 1000]
+    # annealing_steps = [50, 200, 1000]
     T_0, T_f = 100, 0.001
     G_0, G_f = 300, 0.001
-    T = 10/3
-    P = 2
+    T = 10
+    P = 10
 
     means_sa = []
     means_qa = []
@@ -69,9 +69,12 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         100*(np.array(means_sa) / opt_energy - 1),
         yerr=100*(np.array(stds_sa) / (opt_energy*np.sqrt(r))),
         fmt='o-', 
-        capsize=3, 
+        markersize=4,
+        capsize=2, 
         color='black',
-        label='SA'
+        label='SA',
+        linewidth=1
+
     )
 
     plt.errorbar(
@@ -79,38 +82,55 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         100*(np.array(means_qa) / opt_energy - 1),
         yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
         fmt='o-', 
-        capsize=3, 
+        markersize=4,
+        capsize=2, 
         color='red',
-        label='QA'
+        label='QA',
+        linewidth=1
     )
 
     plt.xscale('log')
-    plt.xlabel('log(Number of Monte Carlo Steps)')
-    plt.ylabel('Excess Length After Annealing (%)')
+    plt.xlabel(r'Number of Monte Carlo Steps')
+    plt.ylabel(r'Excess Length ($\%$)')
     plt.legend()
 
     # Add minor ticks on the x-axis
     plt.minorticks_on()
 
     # Customize the appearance of the minor ticks
-    plt.tick_params(which='minor', size=3, width=1, direction='in')
+    plt.tick_params(which='minor', size=1.5, width=0.7, direction='in', )
+    plt.tick_params(which='both', direction='in', top=True, right=True)
+
 
     plt.savefig(
         f'figures/{problem.name}/annealing_steps.jpg', 
         dpi=1000,
         bbox_inches='tight'
-        )
-    plt.show()
+    )
+    # plt.show()
 
 def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int):
     """Generates plot comparing the accuracy of optimisation methods for 
     different starting temperature
+
+    for qa compare PT - can use the same axis
 
     Args:
         problem (tsplib95.models.StandardProblem): TSP of interest
         opt_energy (int): length of optimal tour
         r (int): number of times to repeat each calculation
     """
+    # Set width of image (inches)
+    W = 3.2
+    plt.rcParams.update({
+        'figure.figsize': (W, 3*W/4),
+        'font.size': 8,
+        'axes.labelsize': 10,
+        'font.family': 'serif',
+        'font.serif': 'Times New Roman',
+        'text.usetex': True
+    })
+
     # temperatures = [50, 75, 100, 150, 200, 500, 1000]
     temperatures = [1, 5, 10, 20, 30, 40, 50, 75, 100, 200]
     annealing_steps = 100
@@ -148,8 +168,15 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
     # Customize the appearance of the minor ticks
     plt.tick_params(which='minor', size=3, width=1, direction='in')
 
-    plt.savefig(f'figures/{problem.name}/init_temp.jpg', dpi=600)
+    plt.savefig(
+        f'figures/{problem.name}/init_temp.jpg', 
+        dpi=1000,
+        bbox_inches='tight'
+    )
     plt.show()
+
+def compare_trotter_number():
+    return
 
 if __name__ == "__main__":
     print("Generating Plots")
