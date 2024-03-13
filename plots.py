@@ -33,7 +33,7 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
 
     # Simulate for SA
     # annealing_steps_sa = [50, 75, 100, 150, 200, 350, 500, 1000, 2000, 5000, 10000]
-    # annealing_steps_sa = [35] # For testing
+    # annealing_steps_sa = [25, 35] # For testing
     # T_0, T_f = 100, 0.001
 
     # means_sa = []
@@ -58,12 +58,12 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
     # return
 
     # # Repeat for QA, excluding the really high numbers
-    annealing_steps = [15, 25, 50, 75, 100, 150, 200, 350, 500, 1000]
+    annealing_steps = [25, 50, 75, 100, 150, 200, 350, 500, 1000]
     # annealing_steps = [15] # For testing
 
     # G_0, G_f = 300, 0.001
     # PT = 50
-    # P = 10
+    P = 10
 
     # means_qa = []
     # stds_qa = []
@@ -107,12 +107,12 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
     means_qa = data['means_qa']
     stds_qa = data['stds_qa']
 
-    means_sa = [6951.3] + list(means_sa)
-    stds_sa = [81.27859496817105] + list(stds_sa)
-    annealing_steps_sa = [35] + list(annealing_steps_sa)
+    # means_sa = [6993.4, 6951.3] + list(means_sa)
+    # stds_sa = [133.63248108150952, 81.27859496817105] + list(stds_sa)
+    # annealing_steps_sa = [25, 35] + list(annealing_steps_sa)
 
-    means_qa = [6994.1, 6909.4] + list(means_qa)
-    stds_qa = [78.91698169595692, 30.65517900779573] + list(stds_qa)
+    means_qa = [6909.4] + list(means_qa)
+    stds_qa = [30.65517900779573] + list(stds_qa)
     
     plt.errorbar(
         annealing_steps_sa, 
@@ -136,6 +136,19 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         capsize=2, 
         color='red',
         label='QA',
+        linewidth=1
+    )
+
+    plt.errorbar(
+        np.array(annealing_steps)*P, 
+        100*(np.array(means_qa) / opt_energy - 1),
+        yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        markersize=4,
+        capsize=2, 
+        markerfacecolor='white', 
+        color='blue',
+        label=r'QA ($\tau \times P$)',
         linewidth=1
     )
 
