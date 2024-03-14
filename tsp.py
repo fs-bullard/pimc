@@ -324,11 +324,11 @@ def classical_energy_tsp(weights: dict, tour: np.ndarray) -> int:
     N = len(tour)
     H = 0
     for i in range(N):
-        for j in range(N):
-            if tour[i][j]:
-                H += weights[(i, j)]
+        for j in range(N - i):
+            if tour[i][j + i]:
+                H += weights[(i, j + i)]
 
-    return H // 2
+    return H
 
 def quantum_energy_tsp(weights: dict, tours: np.ndarray, J_perp: float) -> int:
     """Returns the total weight of a given tour summed over Trotter slices 
@@ -355,8 +355,8 @@ def quantum_energy_tsp(weights: dict, tours: np.ndarray, J_perp: float) -> int:
     # Now loop over the Trotter slices
     for i in range(P):
         for j in range(N):
-            for k in range(N):
-                H += J_perp*(2*tours[i][j][k] - 1)*(2*tours[i - 1][j][k] - 1) / 2
+            for k in range(N - j):
+                H += J_perp*(2*tours[i][j][k + j] - 1)*(2*tours[i - 1][j][k + j] - 1) 
 
     return H
 
