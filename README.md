@@ -1,2 +1,2 @@
-# pimq
-Comparing simulated annealing (SA) and quantum monte carlo (qmc) as methods for solving the travelling salesman problem (TSP).
+# pimc
+Comparing simulated annealing (SA) and quantum annealing (QA) as methods for solving the travelling salesman problem (TSP).
