@@ -134,6 +134,7 @@ def compare_annealing_steps(problem: tsplib95.models.StandardProblem, opt_energy
         fmt='o-', 
         markersize=4,
         capsize=2, 
+        markerfacecolor='white', 
         color='red',
         label='QA',
         linewidth=1
@@ -251,7 +252,10 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
     means_qa = data['means_qa']
     stds_qa = data['stds_qa']
     
-    plt.errorbar(
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twiny()
+
+    ax1.errorbar(
         temperatures, 
         100*(np.array(means_sa) / opt_energy - 1),
         yerr=100*(np.array(stds_sa) / (opt_energy*np.sqrt(r))),
@@ -263,7 +267,7 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         linewidth=1
     )
 
-    plt.errorbar(
+    ax2.errorbar(
         temperatures[:-3], 
         100*(np.array(means_qa[:-3]) / opt_energy - 1),
         yerr=100*(np.array(stds_qa[:-3]) / (opt_energy*np.sqrt(r))),
@@ -271,20 +275,28 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         markersize=4,
         capsize=2, 
         color='red',
+        markerfacecolor='white', 
         label='QA',
         linewidth=1
     )
 
-    plt.xlabel(r'$T_0$ and $PT$')
-    plt.ylabel(r'Excess Length ($\%$)')
-    plt.legend()
+    ax1.set_xlabel(r'$T$')
+    ax2.set_xlabel(r'$PT$', color='red')
+    ax1.set_ylabel(r'Excess Length ($\%$)')
 
-    # Add minor ticks on the x-axis
-    plt.minorticks_on()
+    ax2.tick_params(which='both', axis='x', colors='red')
+    ax2.xaxis.label.set_color('red')
+
+    fig.legend(loc="upper left", bbox_to_anchor=(0,1), bbox_transform=ax1.transAxes)
+
 
     # Customize the appearance of the minor ticks
-    plt.tick_params(which='minor', size=1.5, width=0.7, direction='in', )
-    plt.tick_params(which='both', direction='in', top=True, right=True)
+    ax1.minorticks_on()
+    ax1.tick_params(which='minor', size=1.5, width=0.7, direction='in')
+    ax1.tick_params(which='both', direction='in', right=True)
+    ax2.minorticks_on()
+    ax2.tick_params(which='minor', size=1.5, width=0.7, direction='in')
+    ax2.tick_params(which='both', direction='in', top=True, right=True)
 
     plt.savefig(
         f'figures/{problem.name}/init_temp.jpg', 
@@ -322,27 +334,34 @@ def compare_trotter_number(problem: tsplib95.models.StandardProblem, opt_energy:
     means_qa = []
     stds_qa = []
 
-    for P in trotter_numbers:
-        print(f'P: {P}')
-        G_schedule = np.linspace(G_0, G_f, annealing_steps)
+    # for P in trotter_numbers:
+    #     print(f'P: {P}')
+    #     G_schedule = np.linspace(G_0, G_f, annealing_steps)
 
-        lengths_qa = []
+    #     lengths_qa = []
 
-        for _ in range(r):
-            print('repeat:', str(_))       
-            tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
-            lengths_qa.append(E)
+    #     for _ in range(r):
+    #         print('repeat:', str(_))       
+    #         tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
+    #         lengths_qa.append(E)
 
-        means_qa.append(np.mean(lengths_qa))
-        stds_qa.append(np.std(lengths_qa))
+    #     means_qa.append(np.mean(lengths_qa))
+    #     stds_qa.append(np.std(lengths_qa))
 
-    # Save the data
-    data = {
-        "trotter_numbers": trotter_numbers,
-        "means_qa": means_qa,
-        "stds_qa": stds_qa,
-    }
-    np.savez(f'data/{problem.name}/trotter_number_data.npz', **data)
+    # # Save the data
+    # data = {
+    #     "trotter_numbers": trotter_numbers,
+    #     "means_qa": means_qa,
+    #     "stds_qa": stds_qa,
+    # }
+    # np.savez(f'data/{problem.name}/trotter_number_data.npz', **data)
+
+    data = np.load('data/ulysses16/trotter_number_data_good.npz')
+
+    trotter_numbers = data['trotter_numbers']
+    means_qa = data['means_qa']
+    stds_qa = data['stds_qa']
+    
 
     plt.errorbar(
         trotter_numbers, 
@@ -351,6 +370,7 @@ def compare_trotter_number(problem: tsplib95.models.StandardProblem, opt_energy:
         fmt='o-', 
         markersize=4,
         capsize=2, 
+        markerfacecolor='white', 
         color='red',
         label='QA',
         linewidth=1
@@ -442,6 +462,7 @@ def plot_gamma_0(problem: tsplib95.models.StandardProblem, opt_energy: int, data
         fmt='o-', 
         markersize=4,
         capsize=2, 
+        markerfacecolor='white', 
         color='red',
         label='QA',
         linewidth=1
@@ -458,7 +479,7 @@ def plot_gamma_0(problem: tsplib95.models.StandardProblem, opt_energy: int, data
     plt.tick_params(which='both', direction='in', top=True, right=True)
 
     plt.savefig(
-        f'figures/{problem.name}/trotter_number.jpg', 
+        f'figures/{problem.name}/gamma_0.jpg', 
         dpi=1000,
         bbox_inches='tight'
     )
@@ -483,7 +504,7 @@ if __name__ == "__main__":
     # compare_annealing_steps(problem, opt_energy, 20)
 
     # Generate plot comparing performance for different initial temps / PT
-    # compare_starting_temperature(problem, opt_energy, 20)
+    compare_starting_temperature(problem, opt_energy, 20)
 
     # Generate plot comparing performance for different Trotter numbers
     # compare_trotter_number(problem, opt_energy, 20)
@@ -491,5 +512,5 @@ if __name__ == "__main__":
     # Generate plot comparing performance for different Gamma_0s numbers
     # compare_gamma_0(problem, opt_energy, 20)
 
-    data = np.load('data/ulysses16/gamma_data.npz')
-    plot_gamma_0(problem, opt_energy, data, 20)
+    data = np.load('data/ulysses16/gamma_data_good.npz')
+    # plot_gamma_0(problem, opt_energy, data, 20)
