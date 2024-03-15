@@ -372,6 +372,97 @@ def compare_trotter_number(problem: tsplib95.models.StandardProblem, opt_energy:
         bbox_inches='tight'
     )
 
+def compare_gamma_0(problem: tsplib95.models.StandardProblem, opt_energy: int, r: int = 10):
+    """Generates data comparing the accuracy of optimisation methods for 
+    different initial transverse field Gamma_0
+
+    Args:
+        problem (tsplib95.models.StandardProblem): TSP of interest
+        opt_energy (int): length of optimal tour
+        r (int): number of times to repeat each calculation
+    """
+    gammas = [1, 5, 10, 20, 50, 100, 200, 300, 500]
+
+    G_f = 0.001
+    PT = 50
+    P = 10
+    annealing_steps = 100
+
+    means_qa = []
+    stds_qa = []
+
+    for G_0 in gammas:
+        print(f'Gamma_0: {G_0}')
+        G_schedule = np.linspace(G_0, G_f, annealing_steps)
+
+        lengths_qa = []
+
+        for _ in range(r):
+            print('repeat:', str(_))       
+            tour, E = quantum_annealing(problem, G_schedule, PT/P, P)
+            lengths_qa.append(E)
+
+        means_qa.append(np.mean(lengths_qa))
+        stds_qa.append(np.std(lengths_qa))
+
+    # Save the data
+    data = {
+        "gammas": gammas,
+        "means_qa": means_qa,
+        "stds_qa": stds_qa,
+    }
+    np.savez(f'data/{problem.name}/gamma_data.npz', **data)
+
+def plot_gamma_0(problem: tsplib95.models.StandardProblem, opt_energy: int, data: dict, r:int):    
+    """Generates plot comparing the accuracy of optimisation methods for 
+    different initial transverse field Gamma_0
+
+    Args:
+        data (_type_): _description_
+    """
+    # Set width of image (inches)
+    W = 3.2
+    plt.rcParams.update({
+        'figure.figsize': (W, 3*W/4),
+        'font.size': 8,
+        'axes.labelsize': 10,
+        'font.family': 'serif',
+        'font.serif': 'Times New Roman',
+        'text.usetex': True
+    })
+
+    gammas = data['gammas']
+    means_qa = data['means_qa']
+    stds_qa = data['stds_qa']
+
+    plt.errorbar(
+        gammas, 
+        100*(np.array(means_qa) / opt_energy - 1),
+        yerr=100*(np.array(stds_qa) / (opt_energy*np.sqrt(r))),
+        fmt='o-', 
+        markersize=4,
+        capsize=2, 
+        color='red',
+        label='QA',
+        linewidth=1
+    )
+
+    plt.xlabel(r'Initial Transverse Field Strength $\Gamma_0$')
+    plt.ylabel(r'Excess Length ($\%$)')
+
+    # Add minor ticks on the x-axis
+    plt.minorticks_on()
+
+    # Customize the appearance of the minor ticks
+    plt.tick_params(which='minor', size=1.5, width=0.7, direction='in')
+    plt.tick_params(which='both', direction='in', top=True, right=True)
+
+    plt.savefig(
+        f'figures/{problem.name}/trotter_number.jpg', 
+        dpi=1000,
+        bbox_inches='tight'
+    )
+
 if __name__ == "__main__":
     print("Generating Plots")
 
@@ -389,10 +480,16 @@ if __name__ == "__main__":
     print("Optimal energy:", opt_energy)
 
     # Generate plot comparing performance for different number of annealing steps
-    compare_annealing_steps(problem, opt_energy, 20)
+    # compare_annealing_steps(problem, opt_energy, 20)
 
     # Generate plot comparing performance for different initial temps / PT
     # compare_starting_temperature(problem, opt_energy, 20)
 
     # Generate plot comparing performance for different Trotter numbers
     # compare_trotter_number(problem, opt_energy, 20)
+
+    # Generate plot comparing performance for different Gamma_0s numbers
+    # compare_gamma_0(problem, opt_energy, 20)
+
+    data = np.load('data/ulysses16/gamma_data.npz')
+    plot_gamma_0(problem, opt_energy, data, 20)
