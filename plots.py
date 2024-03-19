@@ -280,7 +280,7 @@ def compare_starting_temperature(problem: tsplib95.models.StandardProblem, opt_e
         linewidth=1
     )
 
-    ax1.set_xlabel(r'$T$')
+    ax1.set_xlabel(r'$T_0$')
     ax2.set_xlabel(r'$PT$', color='red')
     ax1.set_ylabel(r'Excess Length ($\%$)')
 
